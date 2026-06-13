@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/health_service.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
@@ -53,6 +54,13 @@ class _LiveScreenState extends State<LiveScreen> {
         return '🟡 Warning';
       case HealthStatus.normal:
         return '🟢 Normal';
+    }
+  }
+
+  Future<void> _callEmergency() async {
+    final uri = Uri(scheme: 'tel', path: '123');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     }
   }
 
@@ -131,17 +139,34 @@ class _LiveScreenState extends State<LiveScreen> {
                   child: Text(a, style: const TextStyle(fontSize: 14)),
                 )),
                 const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Dismiss'),
+                      ),
                     ),
-                    child: const Text('Dismiss'),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _callEmergency,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Call 123'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

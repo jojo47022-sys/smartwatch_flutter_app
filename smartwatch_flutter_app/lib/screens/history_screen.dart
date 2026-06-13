@@ -6,6 +6,21 @@ import '../services/health_service.dart';
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
+  // ✅ يتحقق إن القراءة منطقية فسيولوجيًا
+  bool _isReadingValid({
+    required int heartRate,
+    required int spo2,
+    required int systolic,
+    required int diastolic,
+  }) {
+    if (heartRate < 30 || heartRate > 220) return false;
+    if (spo2 < 50 || spo2 > 100) return false;
+    if (systolic < 60 || systolic > 250) return false;
+    if (diastolic < 30 || diastolic > 150) return false;
+    if (systolic <= diastolic) return false;
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,6 +54,13 @@ class HistoryScreen extends StatelessWidget {
               final record = history[index];
               final timeStr = DateFormat('M/d/yyyy h:mm a').format(record.timestamp);
 
+              final isValid = _isReadingValid(
+                heartRate: record.heartRate,
+                spo2: record.spo2,
+                systolic: record.systolic,
+                diastolic: record.diastolic,
+              );
+
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 shape: RoundedRectangleBorder(
@@ -52,12 +74,27 @@ class HistoryScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            timeStr,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                timeStr,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              if (!isValid) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Warning',
+                                  style: TextStyle(
+                                    color: Colors.orange.shade800,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           if (record.fallDetected)
                             Container(
@@ -86,6 +123,7 @@ class HistoryScreen extends StatelessWidget {
                           _buildMetricColumn('BP', '${record.systolic}/${record.diastolic}', 'mmHg', Colors.purple),
                         ],
                       ),
+
                       if (record.fallDetected) ...[
                         const SizedBox(height: 12),
                         Container(
