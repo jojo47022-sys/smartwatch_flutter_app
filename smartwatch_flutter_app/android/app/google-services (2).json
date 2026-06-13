@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "577984434584",
+    "firebase_url": "https://smartwatch-669b1-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "smartwatch-669b1",
+    "storage_bucket": "smartwatch-669b1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:577984434584:android:343fa4c210b39505c6dbed",
+        "android_client_info": {
+          "package_name": "com.example.smartwatch_flutter_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAAODlQ26fMfFy8lBKMobhKcdK7YCD9pw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
