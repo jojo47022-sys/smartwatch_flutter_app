@@ -58,8 +58,7 @@ class HealthService extends ChangeNotifier {
   }
 
   static HealthStatus getSpo2Status(int value) {
-    if (value <= 0 || value > 100)
-      return HealthStatus.danger; // ✅ فوق 100 = sensor error
+    if (value <= 0 || value > 100) return HealthStatus.danger;
     if (value < 90) return HealthStatus.danger;
     if (value < 95) return HealthStatus.warning;
     return HealthStatus.normal;
@@ -96,16 +95,41 @@ class HealthService extends ChangeNotifier {
         final data = Map<String, dynamic>.from(raw as Map);
 
         _heartRate = int.tryParse(data['heartRate']?.toString() ?? '0') ?? 0;
-        _spo2 =
-            int.tryParse(data['spo2']?.toString().replaceAll('%', '') ?? '0') ??
-                0;
-        _systolic = int.tryParse(data['systolic']?.toString() ?? '0') ?? 0;
-        _diastolic = int.tryParse(data['diastolic']?.toString() ?? '0') ?? 0;
-        _isFallDetected = data['FallDetected'] == true;
+        _spo2 = int.tryParse(
+                data['spo2']?.toString().replaceAll('%', '') ?? '0') ?? 0;
+
+        // ✅ Blood Pressure من nested object
+        final bp = data['bloodPressure'] != null
+            ? Map<String, dynamic>.from(data['bloodPressure'] as Map)
+            : null;
+        _systolic = int.tryParse(bp?['systolic']?.toString() ?? '0') ?? 0;
+        _diastolic = int.tryParse(bp?['diastolic']?.toString() ?? '0') ?? 0;
+
         _batteryLevel = int.tryParse(data['battery']?.toString() ?? '0') ?? 0;
-        _latitude = double.tryParse(data['latitude']?.toString() ?? '0') ?? 0.0;
-        _longitude =
-            double.tryParse(data['longitude']?.toString() ?? '0') ?? 0.0;
+
+        // ✅ Location من nested object
+        final location = data['location'] != null
+            ? Map<String, dynamic>.from(data['location'] as Map)
+            : null;
+        _latitude = double.tryParse(
+                location?['latitude']?.toString() ?? '0') ?? 0.0;
+        _longitude = double.tryParse(
+                location?['longitude']?.toString() ?? '0') ?? 0.0;
+
+        // ✅ Fall Detection - بس لو اتغير من false لـ true
+        final newFall = data['fallDetected'] == true;
+        if (newFall && !_isFallDetected) {
+          _isFallDetected = newFall;
+          NotificationService.checkAndNotify(
+            heartRate: _heartRate,
+            spo2: _spo2,
+            systolic: _systolic,
+            diastolic: _diastolic,
+            fallDetected: true,
+          );
+        } else {
+          _isFallDetected = newFall;
+        }
 
         _updateTimestamp();
 
@@ -127,12 +151,13 @@ class HealthService extends ChangeNotifier {
 
         notifyListeners();
 
+        // ✅ Health notifications بدون الـ fall
         NotificationService.checkAndNotify(
           heartRate: _heartRate,
           spo2: _spo2,
           systolic: _systolic,
           diastolic: _diastolic,
-          fallDetected: _isFallDetected,
+          fallDetected: false,
         );
       } catch (e) {
         debugPrint('Firebase error: $e');
@@ -141,7 +166,7 @@ class HealthService extends ChangeNotifier {
   }
 
   void acknowledgeFall() {
-    _ref.update({"FallDetected": false});
+    _ref.update({"fallDetected": false});
     _isFallDetected = false;
     notifyListeners();
   }

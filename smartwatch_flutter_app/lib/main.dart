@@ -8,6 +8,7 @@ import 'screens/main_screen.dart';
 import 'services/health_service.dart';
 import 'services/notification_service.dart';
 import 'services/auth_service.dart';
+import 'package:flutter_open_street_map/flutter_open_street_map.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    return MultiProvider(     
       providers: [
         ChangeNotifierProvider(create: (context) => HealthService()),
         ChangeNotifierProvider.value(value: authService),

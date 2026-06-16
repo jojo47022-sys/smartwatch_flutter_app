@@ -14,12 +14,11 @@ class LiveScreen extends StatefulWidget {
 
 class _LiveScreenState extends State<LiveScreen> {
   String _lastAlertKey = '';
-  int _badgeCount = 0; // ✅ عداد الـ badge
+  int _badgeCount = 0;
 
   @override
   void initState() {
     super.initState();
-    // ✅ لما الـ unreadCount يتغير، حدّث الـ badge
     NotificationService.onCountChanged = () {
       if (mounted) {
         setState(() {
@@ -65,6 +64,9 @@ class _LiveScreenState extends State<LiveScreen> {
   }
 
   void _checkAndShowAlerts(HealthService healthService) {
+    // ✅ لو البيانات لسه ما وصلتش من Firebase، متعرضش حاجة
+    if (healthService.heartRate == 0 || healthService.spo2 == 0) return;
+    
     final alerts = <String>[];
 
     if (healthService.isFallDetected) {
@@ -114,7 +116,8 @@ class _LiveScreenState extends State<LiveScreen> {
         context: context,
         barrierDismissible: true,
         builder: (ctx) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -126,18 +129,30 @@ class _LiveScreenState extends State<LiveScreen> {
                     color: Colors.red.shade50,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 36),
+                  child: const Icon(Icons.warning_amber_rounded,
+                      color: Colors.red, size: 36),
                 ),
                 const SizedBox(height: 12),
                 const Text(
                   'Health Alert!',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red),
                 ),
                 const SizedBox(height: 12),
                 ...alerts.map((a) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(a, style: const TextStyle(fontSize: 14)),
-                )),
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.circle, color: Colors.red, size: 10),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: Text(a,
+                                  style: const TextStyle(fontSize: 14))),
+                        ],
+                      ),
+                    )),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -147,7 +162,8 @@ class _LiveScreenState extends State<LiveScreen> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
                           side: const BorderSide(color: Colors.red),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: const Text('Dismiss'),
@@ -160,7 +176,8 @@ class _LiveScreenState extends State<LiveScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: const Text('Call 123'),
@@ -183,7 +200,6 @@ class _LiveScreenState extends State<LiveScreen> {
     final bpStatus = HealthService.getSystolicStatus(healthService.systolic);
     final diaStatus = HealthService.getDiastolicStatus(healthService.diastolic);
 
-    // ✅ امسح الـ badge لما يفتح الـ dialog
     NotificationService.clearUnread();
     setState(() => _badgeCount = 0);
 
@@ -195,17 +211,22 @@ class _LiveScreenState extends State<LiveScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('❤️ Heart Rate: ${healthService.heartRate} bpm - ${_getStatusText(hrStatus)}'),
+            Text(
+                '❤️ Heart Rate: ${healthService.heartRate} bpm - ${_getStatusText(hrStatus)}'),
             const SizedBox(height: 8),
-            Text('🫁 SpO2: ${healthService.spo2}% - ${_getStatusText(spo2Status)}'),
+            Text(
+                '🫁 SpO2: ${healthService.spo2}% - ${_getStatusText(spo2Status)}'),
             const SizedBox(height: 8),
-            Text('🩺 Systolic: ${healthService.systolic} mmHg - ${_getStatusText(bpStatus)}'),
+            Text(
+                '🩺 Systolic: ${healthService.systolic} mmHg - ${_getStatusText(bpStatus)}'),
             const SizedBox(height: 8),
-            Text('🩺 Diastolic: ${healthService.diastolic} mmHg - ${_getStatusText(diaStatus)}'),
+            Text(
+                '🩺 Diastolic: ${healthService.diastolic} mmHg - ${_getStatusText(diaStatus)}'),
             if (healthService.isFallDetected) ...[
               const SizedBox(height: 8),
               const Text('⚠️ Fall Detected!',
-                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      color: Colors.red, fontWeight: FontWeight.bold)),
             ],
           ],
         ),
@@ -229,7 +250,6 @@ class _LiveScreenState extends State<LiveScreen> {
         elevation: 0,
         centerTitle: true,
         actions: [
-          // ✅ زر الجرس مع الـ badge
           Padding(
             padding: const EdgeInsets.only(top: 8, right: 4),
             child: Stack(
@@ -249,7 +269,8 @@ class _LiveScreenState extends State<LiveScreen> {
                         color: Colors.red,
                         shape: BoxShape.circle,
                       ),
-                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                      constraints:
+                          const BoxConstraints(minWidth: 18, minHeight: 18),
                       child: Text(
                         _badgeCount > 99 ? '99+' : '$_badgeCount',
                         style: const TextStyle(
@@ -276,7 +297,8 @@ class _LiveScreenState extends State<LiveScreen> {
             icon: const Icon(Icons.logout),
             onSelected: (value) async {
               if (value == 'logout') {
-                final authService = Provider.of<AuthService>(context, listen: false);
+                final authService =
+                    Provider.of<AuthService>(context, listen: false);
                 await authService.logout();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -307,10 +329,13 @@ class _LiveScreenState extends State<LiveScreen> {
         builder: (context, healthService, child) {
           _checkAndShowAlerts(healthService);
 
-          final hrStatus = HealthService.getHeartRateStatus(healthService.heartRate);
+          final hrStatus =
+              HealthService.getHeartRateStatus(healthService.heartRate);
           final spo2Status = HealthService.getSpo2Status(healthService.spo2);
-          final bpStatus = HealthService.getSystolicStatus(healthService.systolic);
-          final diaStatus = HealthService.getDiastolicStatus(healthService.diastolic);
+          final bpStatus =
+              HealthService.getSystolicStatus(healthService.systolic);
+          final diaStatus =
+              HealthService.getDiastolicStatus(healthService.diastolic);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -329,7 +354,8 @@ class _LiveScreenState extends State<LiveScreen> {
                 // Heart Rate Card
                 Card(
                   elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -339,9 +365,14 @@ class _LiveScreenState extends State<LiveScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('Heart Rate',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey)),
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey)),
                             Text(_getStatusText(hrStatus),
-                                style: TextStyle(fontSize: 12, color: _getStatusColor(hrStatus))),
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: _getStatusColor(hrStatus))),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -350,12 +381,19 @@ class _LiveScreenState extends State<LiveScreen> {
                           textBaseline: TextBaseline.alphabetic,
                           children: [
                             Text('${healthService.heartRate}',
-                                style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold, color: _getStatusColor(hrStatus))),
+                                style: TextStyle(
+                                    fontSize: 42,
+                                    fontWeight: FontWeight.bold,
+                                    color: _getStatusColor(hrStatus))),
                             const SizedBox(width: 4),
-                            const Text('bpm', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                            const Text('bpm',
+                                style: TextStyle(
+                                    fontSize: 18, color: Colors.grey)),
                           ],
                         ),
-                        const Text('Normal: 60-100 bpm', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const Text('Normal: 60-100 bpm',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -366,7 +404,8 @@ class _LiveScreenState extends State<LiveScreen> {
                 // SpO2 Card
                 Card(
                   elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -376,9 +415,14 @@ class _LiveScreenState extends State<LiveScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('SpO2 Level',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey)),
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey)),
                             Text(_getStatusText(spo2Status),
-                                style: TextStyle(fontSize: 12, color: _getStatusColor(spo2Status))),
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: _getStatusColor(spo2Status))),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -387,12 +431,19 @@ class _LiveScreenState extends State<LiveScreen> {
                           textBaseline: TextBaseline.alphabetic,
                           children: [
                             Text('${healthService.spo2}',
-                                style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold, color: _getStatusColor(spo2Status))),
+                                style: TextStyle(
+                                    fontSize: 42,
+                                    fontWeight: FontWeight.bold,
+                                    color: _getStatusColor(spo2Status))),
                             const SizedBox(width: 4),
-                            const Text('%', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                            const Text('%',
+                                style: TextStyle(
+                                    fontSize: 18, color: Colors.grey)),
                           ],
                         ),
-                        const Text('Normal: 95-100%', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const Text('Normal: 95-100%',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -403,7 +454,8 @@ class _LiveScreenState extends State<LiveScreen> {
                 // Blood Pressure Card
                 Card(
                   elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -413,12 +465,20 @@ class _LiveScreenState extends State<LiveScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('Blood Pressure',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey)),
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey)),
                             Text(
-                              _getStatusText(bpStatus.index >= diaStatus.index ? bpStatus : diaStatus),
+                              _getStatusText(bpStatus.index >= diaStatus.index
+                                  ? bpStatus
+                                  : diaStatus),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: _getStatusColor(bpStatus.index >= diaStatus.index ? bpStatus : diaStatus),
+                                color: _getStatusColor(
+                                    bpStatus.index >= diaStatus.index
+                                        ? bpStatus
+                                        : diaStatus),
                               ),
                             ),
                           ],
@@ -430,11 +490,18 @@ class _LiveScreenState extends State<LiveScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Systolic', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                                  const Text('Systolic',
+                                      style: TextStyle(
+                                          fontSize: 14, color: Colors.grey)),
                                   const SizedBox(height: 4),
                                   Text('${healthService.systolic}',
-                                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _getStatusColor(bpStatus))),
-                                  const Text('mmHg', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                      style: TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: _getStatusColor(bpStatus))),
+                                  const Text('mmHg',
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.grey)),
                                 ],
                               ),
                             ),
@@ -442,18 +509,27 @@ class _LiveScreenState extends State<LiveScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Diastolic', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                                  const Text('Diastolic',
+                                      style: TextStyle(
+                                          fontSize: 14, color: Colors.grey)),
                                   const SizedBox(height: 4),
                                   Text('${healthService.diastolic}',
-                                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _getStatusColor(diaStatus))),
-                                  const Text('mmHg', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                      style: TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: _getStatusColor(diaStatus))),
+                                  const Text('mmHg',
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.grey)),
                                 ],
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 4),
-                        const Text('Normal: 90-140 / 60-90 mmHg', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const Text('Normal: 90-140 / 60-90 mmHg',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -472,21 +548,27 @@ class _LiveScreenState extends State<LiveScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 32),
+                        const Icon(Icons.warning_amber_rounded,
+                            color: Colors.red, size: 32),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text('Fall Detected!',
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red)),
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red)),
                               const Text('Check Immediately!',
-                                  style: TextStyle(fontSize: 14, color: Colors.red)),
+                                  style: TextStyle(
+                                      fontSize: 14, color: Colors.red)),
                               const SizedBox(height: 8),
                               ElevatedButton(
                                 onPressed: healthService.acknowledgeFall,
                                 style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white),
                                 child: const Text('Acknowledge'),
                               ),
                             ],
@@ -495,32 +577,6 @@ class _LiveScreenState extends State<LiveScreen> {
                       ],
                     ),
                   ),
-
-                const SizedBox(height: 16),
-
-                // Location Card
-                Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Location',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey)),
-                        const SizedBox(height: 8),
-                        Text('Lat: ${healthService.latitude.toStringAsFixed(4)}',
-                            style: const TextStyle(fontSize: 16)),
-                        Text('Lng: ${healthService.longitude.toStringAsFixed(4)}',
-                            style: const TextStyle(fontSize: 16)),
-                        const SizedBox(height: 4),
-                        Text('Last update: ${healthService.lastUpdated}',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                ),
               ],
             ),
           );

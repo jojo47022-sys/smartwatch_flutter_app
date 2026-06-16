@@ -6,12 +6,12 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  // ✅ عداد الـ alerts الغير مقروءة
   static int _unreadCount = 0;
   static int get unreadCount => _unreadCount;
-
-  // ✅ callback لما العداد يتغير — بيخلي الـ UI يتحدث
   static void Function()? onCountChanged;
+
+  // ✅ Callback للـ popup
+  static void Function()? onFallDetected;
 
   static void clearUnread() {
     _unreadCount = 0;
@@ -91,7 +91,6 @@ class NotificationService {
       payload: payload,
     );
 
-    // ✅ زود العداد بعد كل notification
     _incrementUnread();
   }
 
@@ -102,6 +101,8 @@ class NotificationService {
       body: 'Emergency! User may have fallen. Check immediately.',
       payload: 'fall_alert',
     );
+    // ✅ شغل الـ popup
+    onFallDetected?.call();
   }
 
   static Future<void> checkAndNotify({
@@ -115,7 +116,6 @@ class NotificationService {
       await showFallAlertNotification();
     }
 
-    // Heart Rate
     if (heartRate > 0) {
       if (heartRate < 50 || heartRate > 120) {
         await showNotification(
@@ -134,7 +134,6 @@ class NotificationService {
       }
     }
 
-    // SpO2
     if (spo2 > 0 && spo2 <= 100) {
       if (spo2 < 90) {
         await showNotification(
@@ -152,7 +151,6 @@ class NotificationService {
         );
       }
     } else if (spo2 > 100) {
-      // ✅ sensor error
       await showNotification(
         id: 3,
         title: '🔴 DANGER: SpO2 Sensor Error',
@@ -161,7 +159,6 @@ class NotificationService {
       );
     }
 
-    // Blood Pressure - Systolic
     if (systolic > 0) {
       if (systolic > 160 || systolic < 80) {
         await showNotification(
@@ -180,7 +177,6 @@ class NotificationService {
       }
     }
 
-    // ✅ Diastolic - كان مش موجود
     if (diastolic > 0) {
       if (diastolic > 100 || diastolic < 50) {
         await showNotification(

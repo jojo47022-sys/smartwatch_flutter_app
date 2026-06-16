@@ -1,9 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/health_service.dart';
 
 class MapScreen extends StatelessWidget {
   const MapScreen({super.key});
+
+  Future<void> _callEmergency() async {
+    final uri = Uri(scheme: 'tel', path: '123');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _openInMaps(double lat, double lng) async {
+    final uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,235 +40,242 @@ class MapScreen extends StatelessWidget {
       ),
       body: Consumer<HealthService>(
         builder: (context, healthService, child) {
-          return Column(
-            children: [
-              // Map placeholder with location marker
-              Container(
-                height: 300,
-                width: double.infinity,
-                color: Colors.grey.shade200,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Grid pattern for map look
-                    CustomPaint(
-                      size: const Size(double.infinity, double.infinity),
-                      painter: GridPainter(),
-                    ),
-                    // Location marker
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.red.withValues(alpha: 0.5),
-                                blurRadius: 20,
-                                spreadRadius: 5,
-                              ),
-                            ],
+          final lat = healthService.latitude;
+          final lng = healthService.longitude;
+          final hasLocation = lat != 0.0 && lng != 0.0;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Map placeholder with real coordinates
+                Container(
+                  height: 220,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: hasLocation
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            'https://static-maps.yandex.ru/1.x/?ll=$lng,$lat&z=15&l=map&size=600,300&pt=$lng,$lat,pm2rdm',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _buildMapFallback(lat, lng),
                           ),
-                          child: const Icon(
-                            Icons.watch,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                          child: const Text(
-                            'Smart Watch',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        )
+                      : _buildNoLocation(),
                 ),
-              ),
 
-              // Location details panel
-              Container(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Last known location: Cairo, Egypt',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-                    // Coordinates
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Column(
+                // Coordinates Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('📍 GPS Coordinates',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      Row(
                         children: [
-                          _buildLocationRow(
-                            Icons.pin_drop,
-                            'Latitude: ${healthService.latitude.toStringAsFixed(6)}',
-                          ),
-                          const Divider(),
-                          _buildLocationRow(
-                            Icons.pin_drop,
-                            'Longitude: ${healthService.longitude.toStringAsFixed(6)}',
-                          ),
-                          const Divider(),
-                          _buildLocationRow(
-                            Icons.access_time,
-                            'Last Update: ${healthService.lastUpdated}',
+                          const Icon(Icons.location_on,
+                              color: Colors.red, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            hasLocation
+                                ? 'Lat: ${lat.toStringAsFixed(6)}'
+                                : 'Latitude: --',
+                            style: const TextStyle(fontSize: 14),
                           ),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on,
+                              color: Colors.blue, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            hasLocation
+                                ? 'Lng: ${lng.toStringAsFixed(6)}'
+                                : 'Longitude: --',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time,
+                              color: Colors.grey, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Last Update: ${healthService.lastUpdated.isEmpty ? '--' : healthService.lastUpdated}',
+                            style: const TextStyle(
+                                fontSize: 13, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
 
-                    const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                    // Nearby places
-                    const Text(
-                      'Nearby Places',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: hasLocation
+                            ? () => _openInMaps(lat, lng)
+                            : null,
+                        icon: const Icon(Icons.map),
+                        label: const Text('Open in Maps'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A2E3F),
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey.shade300,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-
-                    _buildPlaceTile(
-                        'Tahrir Square', '0.5 km away', Icons.location_on),
-                    _buildPlaceTile(
-                        'Egyptian Museum', '1.2 km away', Icons.museum),
-                    _buildPlaceTile(
-                        'Cairo Tower', '2.5 km away', Icons.location_city),
-
-                    const SizedBox(height: 20),
-
-                    // Action buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Route calculation started...'),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.directions),
-                            label: const Text('Show Route'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1A2E3F),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                          ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _callEmergency,
+                        icon: const Icon(Icons.phone),
+                        label: const Text('Call 123'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Device located at: ${healthService.latitude.toStringAsFixed(4)}, ${healthService.longitude.toStringAsFixed(4)}',
-                                  ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.location_searching),
-                            label: const Text('Locate Device'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
+
+                // Fall Detected Banner
+                if (healthService.isFallDetected) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.shade300),
+                    ),
+                    child: Column(
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded,
+                                color: Colors.red, size: 28),
+                            SizedBox(width: 8),
+                            Text(
+                              '⚠️ Fall Detected!',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'The patient may have fallen. Check immediately!',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _callEmergency,
+                                icon: const Icon(Icons.phone),
+                                label: const Text('Call 123'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () =>
+                                    healthService.acknowledgeFall(),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                  side: const BorderSide(color: Colors.red),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('Acknowledge'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildLocationRow(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+  Widget _buildMapFallback(double lat, double lng) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.blue, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 14),
-            ),
+          const Icon(Icons.location_on, color: Colors.red, size: 48),
+          const SizedBox(height: 8),
+          Text(
+            '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}',
+            style: const TextStyle(
+                fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPlaceTile(String name, String distance, IconData icon) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.red),
-      title: Text(name),
-      subtitle: Text(distance),
-      trailing: const Icon(Icons.chevron_right),
-      contentPadding: EdgeInsets.zero,
+  Widget _buildNoLocation() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.location_off, color: Colors.grey, size: 48),
+          SizedBox(height: 8),
+          Text('No location data yet',
+              style: TextStyle(color: Colors.grey, fontSize: 16)),
+        ],
+      ),
     );
   }
-}
-
-// Custom painter for grid background
-class GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.grey.shade300
-      ..strokeWidth = 1;
-
-    // Draw vertical lines
-    for (double i = 0; i < size.width; i += 30) {
-      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
-    }
-
-    // Draw horizontal lines
-    for (double i = 0; i < size.height; i += 30) {
-      canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
